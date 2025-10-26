@@ -9,54 +9,149 @@ from streamlit_folium import folium_static
 import time
 
 st.set_page_config(
-    page_title="Emergency Services Finder - India",
-    page_icon="🏥",
+    page_title="Tourist Emergency Services - India",
+    page_icon="🚑",
     layout="wide",
     initial_sidebar_state="expanded"
 )
 
-# Custom CSS for better styling
+# Custom CSS for beautiful interface
 st.markdown("""
     <style>
-    .main {padding: 1rem;}
-    .stAlert {border-radius: 0.5rem;}
-    h1 {color: #1f77b4;}
+    .main {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        padding: 2rem;
+    }
+    .stApp {
+        background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+    }
+    .emergency-card {
+        background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        padding: 20px;
+        border-radius: 15px;
+        color: white;
+        text-align: center;
+        margin: 10px;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    }
+    .emergency-number {
+        font-size: 2.5rem;
+        font-weight: bold;
+        margin: 10px 0;
+    }
+    .emergency-label {
+        font-size: 1.2rem;
+        margin-bottom: 5px;
+    }
+    .result-card {
+        background: white;
+        padding: 20px;
+        border-radius: 10px;
+        margin: 10px 0;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        border-left: 5px solid #667eea;
+    }
+    .stButton>button {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border: none;
+        border-radius: 10px;
+        padding: 10px 30px;
+        font-size: 1.1rem;
+        font-weight: bold;
+    }
+    h1 {
+        color: #2d3748;
+        text-align: center;
+        font-size: 2.5rem;
+        margin-bottom: 1rem;
+    }
+    .info-box {
+        background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+        padding: 15px;
+        border-radius: 10px;
+        color: white;
+        margin: 10px 0;
+    }
     </style>
 """, unsafe_allow_html=True)
 
-st.title("🏥 Emergency Services & Healthcare Finder - India")
-st.markdown("Find nearby hospitals, clinics, police stations, and emergency services")
+# Emergency Numbers Header
+st.markdown("<h1>🚑 Tourist Emergency Services Finder - India</h1>", unsafe_allow_html=True)
+st.markdown("<p style='text-align: center; font-size: 1.2rem; color: #4a5568;'>Your safety companion while traveling in India</p>", unsafe_allow_html=True)
 
-# --- Caching Functions ---
+# Emergency Helpline Numbers at Top
+st.markdown("### 🆘 Emergency Helpline Numbers (Available 24/7)")
+col1, col2, col3, col4, col5 = st.columns(5)
+
+with col1:
+    st.markdown("""
+        <div class="emergency-card" style="background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);">
+            <div class="emergency-label">🚔 Police</div>
+            <div class="emergency-number">100</div>
+        </div>
+    """, unsafe_allow_html=True)
+
+with col2:
+    st.markdown("""
+        <div class="emergency-card" style="background: linear-gradient(135deg, #30cfd0 0%, #330867 100%);">
+            <div class="emergency-label">🚒 Fire</div>
+            <div class="emergency-number">101</div>
+        </div>
+    """, unsafe_allow_html=True)
+
+with col3:
+    st.markdown("""
+        <div class="emergency-card" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);">
+            <div class="emergency-label">🚑 Ambulance</div>
+            <div class="emergency-number">102</div>
+        </div>
+    """, unsafe_allow_html=True)
+
+with col4:
+    st.markdown("""
+        <div class="emergency-card" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);">
+            <div class="emergency-label">👮 Women Help</div>
+            <div class="emergency-number">1091</div>
+        </div>
+    """, unsafe_allow_html=True)
+
+with col5:
+    st.markdown("""
+        <div class="emergency-card" style="background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);">
+            <div class="emergency-label">🆘 Disaster</div>
+            <div class="emergency-number">108</div>
+        </div>
+    """, unsafe_allow_html=True)
+
+st.markdown("---")
+
+# Caching Functions
 @st.cache_data(ttl=3600)
 def geocode_location(place_name):
-    """Cache geocoding for 1 hour"""
     try:
-        geolocator = Nominatim(user_agent="healthcare_finder_india_v3")
+        geolocator = Nominatim(user_agent="tourist_emergency_finder_india")
         return geolocator.geocode(place_name + ", India", timeout=10)
     except Exception as e:
-        st.error(f"Geocoding error: {e}")
         return None
 
 @st.cache_data(ttl=1800)
 def fetch_resources(lat, lon, radius_km, selected_types):
-    """Cache resource queries for 30 minutes"""
+    """Fetch from both Overpass and use better queries"""
     
     all_resource_queries = {
         "Hospital": '[amenity=hospital]',
         "Clinic": '[amenity=clinic]',
         "Doctors": '[amenity=doctors]',
-        "Health Centre": '[healthcare=centre]',
+        "Pharmacy": '[amenity=pharmacy]',
         "Police Station": '[amenity=police]',
         "Fire Station": '[amenity=fire_station]',
-        "Pharmacy": '[amenity=pharmacy]',
-        "Blood Bank": '[healthcare=blood_donation]',
-        "Ambulance Station": '[emergency=ambulance_station]'
+        "ATM": '[amenity=atm]',
+        "Embassy": '[amenity=embassy]',
+        "Tourist Info": '[tourism=information]'
     }
     
-    # Filter based on user selection
-    resource_queries = {k: v for k, v in all_resource_queries.items() 
-                       if k in selected_types}
+    resource_queries = {k: v for k, v in all_resource_queries.items() if k in selected_types}
     
     all_results = []
     overpass_url = "https://overpass-api.de/api/interpreter"
@@ -68,14 +163,15 @@ def fetch_resources(lat, lon, radius_km, selected_types):
         status_text.text(f"🔍 Searching for {r_type}...")
         
         try:
-            # Enhanced query: fetch both nodes and ways
+            # Broader search - fetch nodes, ways AND relations
             query = f"""
             [out:json][timeout:30];
             (
               node(around:{radius_km*1000},{lat},{lon}){tag};
               way(around:{radius_km*1000},{lat},{lon}){tag};
+              relation(around:{radius_km*1000},{lat},{lon}){tag};
             );
-            out center 150;
+            out center 200;
             """
             
             res = requests.get(overpass_url, params={'data': query}, timeout=35)
@@ -84,9 +180,9 @@ def fetch_resources(lat, lon, radius_km, selected_types):
             
             for element in data.get('elements', []):
                 tags = element.get('tags', {})
-                name = tags.get('name', tags.get('name:en', 'Unnamed'))
+                name = tags.get('name', tags.get('name:en', tags.get('brand', 'Unnamed')))
                 
-                # Get coordinates (handle both nodes and ways)
+                # Get coordinates
                 if 'lat' in element and 'lon' in element:
                     rlat, rlon = element['lat'], element['lon']
                 elif 'center' in element:
@@ -96,29 +192,21 @@ def fetch_resources(lat, lon, radius_km, selected_types):
                 
                 distance = round(geodesic((lat, lon), (rlat, rlon)).km, 2)
                 
-                # Enhanced data extraction
-                phone = tags.get('phone', tags.get('contact:phone', 'N/A'))
-                website = tags.get('website', tags.get('contact:website', 'N/A'))
-                opening_hours = tags.get('opening_hours', 'N/A')
-                emergency_service = tags.get('emergency', 'N/A')
-                beds = tags.get('beds', 'N/A')
-                operator = tags.get('operator', tags.get('operator:type', 'N/A'))
+                # Extract info
+                phone = tags.get('phone', tags.get('contact:phone', 'Not Available'))
+                website = tags.get('website', tags.get('contact:website', 'Not Available'))
+                opening_hours = tags.get('opening_hours', 'Not Available')
                 
-                # Enhanced address extraction
+                # Better address
                 addr_parts = []
                 for key in ['addr:housenumber', 'addr:street', 'addr:suburb', 
-                           'addr:city', 'addr:district', 'addr:state', 'addr:postcode']:
+                           'addr:city', 'addr:state']:
                     if tags.get(key):
                         addr_parts.append(tags[key])
                 
-                if not addr_parts and tags.get('addr:full'):
-                    address = tags['addr:full']
-                elif addr_parts:
-                    address = ', '.join(addr_parts)
-                else:
-                    address = f"Lat: {rlat:.4f}, Lon: {rlon:.4f}"
+                address = ', '.join(addr_parts) if addr_parts else tags.get('addr:full', 'Address not available')
                 
-                # Create Google Maps links
+                # Google Maps links
                 google_maps_link = f"https://www.google.com/maps/search/?api=1&query={rlat},{rlon}"
                 directions_link = f"https://www.google.com/maps/dir/?api=1&origin={lat},{lon}&destination={rlat},{rlon}"
                 
@@ -128,10 +216,7 @@ def fetch_resources(lat, lon, radius_km, selected_types):
                     'Distance_km': distance,
                     'Address': address,
                     'Phone': phone,
-                    'Opening_Hours': opening_hours,
-                    'Emergency': emergency_service,
-                    'Beds': beds,
-                    'Operator': operator,
+                    'Hours': opening_hours,
                     'Website': website,
                     'Latitude': rlat,
                     'Longitude': rlon,
@@ -139,17 +224,11 @@ def fetch_resources(lat, lon, radius_km, selected_types):
                     'Directions': directions_link
                 })
             
-            # Rate limiting: small delay between requests
             time.sleep(0.5)
             
-        except requests.Timeout:
-            st.warning(f"⏰ Timeout fetching {r_type}. Try reducing search radius.")
-        except requests.RequestException as e:
-            st.warning(f"🌐 Network error for {r_type}: {str(e)[:50]}")
         except Exception as e:
-            st.warning(f"⚠️ Error fetching {r_type}: {str(e)[:50]}")
+            st.warning(f"Could not fetch {r_type}: {str(e)[:50]}")
         
-        # Update progress
         progress_bar.progress((idx + 1) / len(resource_queries))
     
     progress_bar.empty()
@@ -157,99 +236,74 @@ def fetch_resources(lat, lon, radius_km, selected_types):
     
     return all_results
 
-# --- Sidebar Configuration ---
+# Sidebar
 with st.sidebar:
-    st.header("⚙️ Search Configuration")
+    st.markdown("### 🔍 Search Settings")
     
     place_name = st.text_input(
-        "📍 Enter Location",
-        placeholder="e.g., Connaught Place, Delhi",
-        help="Enter a city, area, or specific location in India"
+        "📍 Your Location",
+        placeholder="e.g., Gateway of India, Mumbai",
+        help="Enter your current location or hotel name"
     )
     
     radius_km = st.slider(
-        "🔍 Search Radius (km)",
+        "Search Radius (km)",
         min_value=1,
-        max_value=50,
-        value=10,
-        help="Larger radius = more results but slower search"
+        max_value=30,
+        value=5,
+        help="How far to search"
     )
     
-    st.divider()
+    st.markdown("---")
+    st.markdown("### 🎯 What do you need?")
     
-    st.header("🔧 Resource Filters")
+    # Quick preset buttons
+    if st.button("🏥 Medical Emergency", use_container_width=True):
+        st.session_state.resource_filter = ["Hospital", "Clinic", "Pharmacy"]
     
-    all_types = [
-        "Hospital", "Clinic", "Doctors", "Health Centre",
-        "Police Station", "Fire Station", "Pharmacy", 
-        "Blood Bank", "Ambulance Station"
-    ]
+    if st.button("🚨 Safety & Security", use_container_width=True):
+        st.session_state.resource_filter = ["Police Station", "Fire Station", "Embassy"]
     
-    # Quick select buttons
-    col1, col2 = st.columns(2)
-    with col1:
-        if st.button("Healthcare", use_container_width=True):
-            st.session_state.resource_filter = [
-                "Hospital", "Clinic", "Doctors", "Health Centre", "Pharmacy"
-            ]
-    with col2:
-        if st.button("Emergency", use_container_width=True):
-            st.session_state.resource_filter = [
-                "Hospital", "Police Station", "Fire Station", "Ambulance Station"
-            ]
+    if st.button("💰 Money & Info", use_container_width=True):
+        st.session_state.resource_filter = ["ATM", "Tourist Info", "Embassy"]
+    
+    st.markdown("---")
+    
+    all_types = ["Hospital", "Clinic", "Doctors", "Pharmacy", 
+                 "Police Station", "Fire Station", "ATM", "Embassy", "Tourist Info"]
     
     if 'resource_filter' not in st.session_state:
-        st.session_state.resource_filter = ["Hospital", "Clinic", "Police Station"]
+        st.session_state.resource_filter = ["Hospital", "Police Station", "Pharmacy"]
     
     resource_filter = st.multiselect(
-        "Select Resource Types",
+        "Or select specific services:",
         all_types,
-        default=st.session_state.resource_filter,
-        help="Select one or more resource types to find"
+        default=st.session_state.resource_filter
     )
     
-    st.divider()
-    
-    st.header("📊 Display Options")
-    show_map = st.checkbox("Show Map", value=True)
-    show_contact = st.checkbox("Show Contact Details", value=True)
-    show_stats = st.checkbox("Show Statistics", value=True)
-    sort_by = st.selectbox(
-        "Sort Results By",
-        ["Distance", "Name", "Type"],
-        index=0
-    )
-    
-    max_results = st.selectbox(
-        "Results per page",
-        [10, 25, 50, 100, "All"],
-        index=2
-    )
+    st.markdown("---")
+    st.markdown("### ℹ️ Tourist Tips")
+    st.info("💡 Keep these numbers saved:\n\n🚔 Police: 100\n🚑 Ambulance: 102\n🚒 Fire: 101\n👮 Women Help: 1091")
 
-# --- Main Content ---
-search_button = st.button("🔎 Find Nearby Resources", type="primary", use_container_width=True)
+# Main Search
+st.markdown("### 🔎 Find Nearby Services")
+search_button = st.button("🔍 Search Now", type="primary", use_container_width=True)
 
 if search_button:
     if not place_name.strip():
-        st.error("⚠️ Please enter a location!")
+        st.error("⚠️ Please enter your location!")
     elif not resource_filter:
-        st.error("⚠️ Please select at least one resource type!")
+        st.error("⚠️ Please select at least one service!")
     else:
-        with st.spinner("📍 Finding location..."):
+        with st.spinner("📍 Locating you..."):
             location = geocode_location(place_name)
         
         if not location:
-            st.error("❌ Location not found. Please try a more specific location or include the city name.")
+            st.error("❌ Location not found. Try adding city name (e.g., 'Connaught Place, Delhi')")
         else:
             user_location = (location.latitude, location.longitude)
             
-            st.success(f"✅ Location: {location.address}")
-            
-            col1, col2 = st.columns(2)
-            with col1:
-                st.info(f"📍 Latitude: {location.latitude:.6f}")
-            with col2:
-                st.info(f"📍 Longitude: {location.longitude:.6f}")
+            st.success(f"✅ Found: {location.address}")
             
             with st.spinner(f"🔄 Searching within {radius_km} km..."):
                 all_results = fetch_resources(
@@ -260,194 +314,158 @@ if search_button:
                 )
             
             if not all_results:
-                st.warning("ℹ️ No resources found. Try increasing the search radius or selecting more resource types.")
+                st.warning("⚠️ No results found nearby. Try:\n- Increasing search radius\n- Selecting more service types\n- Using a different location name")
+                st.info("💡 Tip: Some areas may have limited data. Try searching in major city centers.")
             else:
                 df = pd.DataFrame(all_results)
+                df = df.sort_values(by='Distance_km').reset_index(drop=True)
                 
-                if sort_by == "Distance":
-                    df = df.sort_values(by='Distance_km')
-                elif sort_by == "Name":
-                    df = df.sort_values(by='Name')
-                else:
-                    df = df.sort_values(by='Type')
+                # Success message
+                st.markdown(f"""
+                    <div class="info-box">
+                        <h3 style='margin:0; color: white;'>✅ Found {len(df)} Services Nearby</h3>
+                        <p style='margin:5px 0 0 0; color: white;'>Showing results within {radius_km} km of your location</p>
+                    </div>
+                """, unsafe_allow_html=True)
                 
-                df = df.reset_index(drop=True)
+                st.markdown("---")
                 
-                st.success(f"✅ Found **{len(df)}** resources within {radius_km} km")
+                # RESULTS FIRST (Before Map)
+                st.markdown("### 📋 Results")
                 
-                if show_stats:
-                    st.subheader("📊 Resource Statistics")
+                # Group by type
+                for service_type in df['Type'].unique():
+                    type_df = df[df['Type'] == service_type].head(10)  # Show top 10 per type
                     
-                    type_counts = df['Type'].value_counts()
+                    st.markdown(f"#### {service_type} ({len(type_df)} found)")
                     
-                    cols = st.columns(min(len(type_counts), 5))
-                    for idx, (rtype, count) in enumerate(type_counts.items()):
-                        with cols[idx % 5]:
-                            avg_dist = df[df['Type'] == rtype]['Distance_km'].mean()
-                            st.metric(
-                                label=rtype,
-                                value=count,
-                                delta=f"Avg: {avg_dist:.1f} km"
-                            )
+                    for idx, row in type_df.iterrows():
+                        st.markdown(f"""
+                        <div class="result-card">
+                            <h4 style='margin:0 0 10px 0; color: #2d3748;'>{idx + 1}. {row['Name']}</h4>
+                            <p style='margin:5px 0; color: #4a5568;'><strong>📏 Distance:</strong> {row['Distance_km']} km away</p>
+                            <p style='margin:5px 0; color: #4a5568;'><strong>📍 Address:</strong> {row['Address']}</p>
+                            <p style='margin:5px 0; color: #4a5568;'><strong>📞 Phone:</strong> {row['Phone']}</p>
+                            <p style='margin:5px 0; color: #4a5568;'><strong>🕒 Hours:</strong> {row['Hours']}</p>
+                            <div style='margin-top: 15px;'>
+                                <a href="{row['Google_Maps']}" target="_blank" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 10px 20px; text-decoration: none; border-radius: 8px; margin-right: 10px; display: inline-block;">🗺️ View on Map</a>
+                                <a href="{row['Directions']}" target="_blank" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); color: white; padding: 10px 20px; text-decoration: none; border-radius: 8px; display: inline-block;">🧭 Get Directions</a>
+                            </div>
+                        </div>
+                        """, unsafe_allow_html=True)
                     
-                    st.divider()
+                    st.markdown("<br>", unsafe_allow_html=True)
                 
-                if show_map:
-                    st.subheader("🗺️ Interactive Map (Click markers for details)")
-                    
-                    m = folium.Map(
-                        location=user_location,
-                        zoom_start=12,
-                        tiles='OpenStreetMap'
-                    )
+                st.markdown("---")
+                
+                # MAP AFTER RESULTS
+                st.markdown("### 🗺️ Interactive Map")
+                st.markdown("Click on markers to see details and get directions")
+                
+                m = folium.Map(
+                    location=user_location,
+                    zoom_start=13,
+                    tiles='OpenStreetMap'
+                )
+                
+                # Your location
+                folium.Marker(
+                    user_location,
+                    popup=f"<b>📍 You are here</b><br>{place_name}",
+                    tooltip="Your Location",
+                    icon=folium.Icon(color='red', icon='star', prefix='fa')
+                ).add_to(m)
+                
+                # Color coding
+                color_map = {
+                    'Hospital': 'blue', 'Clinic': 'lightblue', 'Doctors': 'purple',
+                    'Pharmacy': 'green', 'Police Station': 'darkblue',
+                    'Fire Station': 'orange', 'ATM': 'gray',
+                    'Embassy': 'pink', 'Tourist Info': 'lightgreen'
+                }
+                
+                for _, row in df.iterrows():
+                    popup_html = f"""
+                    <div style="width: 280px; font-family: Arial;">
+                        <h3 style="margin:0 0 10px 0; color: #2d3748;">{row['Name']}</h3>
+                        <p style="margin:3px 0;"><strong>Type:</strong> {row['Type']}</p>
+                        <p style="margin:3px 0;"><strong>Distance:</strong> {row['Distance_km']} km</p>
+                        <p style="margin:3px 0;"><strong>Phone:</strong> {row['Phone']}</p>
+                        <p style="margin:3px 0;"><strong>Address:</strong> {row['Address'][:80]}...</p>
+                        <div style="margin-top: 15px;">
+                            <a href="{row['Google_Maps']}" target="_blank" 
+                               style="background:#4CAF50; color:white; padding:8px 15px; 
+                                      text-decoration:none; border-radius:5px; margin-right:5px; 
+                                      display:inline-block;">🗺️ View Map</a>
+                            <a href="{row['Directions']}" target="_blank" 
+                               style="background:#2196F3; color:white; padding:8px 15px; 
+                                      text-decoration:none; border-radius:5px; 
+                                      display:inline-block;">🧭 Directions</a>
+                        </div>
+                    </div>
+                    """
                     
                     folium.Marker(
-                        user_location,
-                        popup=f"<b>Your Location</b><br>{place_name}",
-                        tooltip="You are here",
-                        icon=folium.Icon(color='red', icon='home', prefix='fa')
+                        [row['Latitude'], row['Longitude']],
+                        popup=folium.Popup(popup_html, max_width=300),
+                        tooltip=f"{row['Name']} ({row['Distance_km']} km)",
+                        icon=folium.Icon(
+                            color=color_map.get(row['Type'], 'gray'),
+                            icon='info-sign'
+                        )
                     ).add_to(m)
-                    
-                    color_map = {
-                        'Hospital': 'blue',
-                        'Clinic': 'lightblue',
-                        'Doctors': 'purple',
-                        'Health Centre': 'cadetblue',
-                        'Police Station': 'darkblue',
-                        'Fire Station': 'orange',
-                        'Pharmacy': 'green',
-                        'Blood Bank': 'red',
-                        'Ambulance Station': 'lightred'
-                    }
-                    
-                    for _, row in df.iterrows():
-                        popup_html = f"""
-                        <div style="width: 250px;">
-                            <h4>{row['Name']}</h4>
-                            <b>Type:</b> {row['Type']}<br>
-                            <b>Distance:</b> {row['Distance_km']} km<br>
-                            <b>Address:</b> {row['Address'][:60]}...<br>
-                        """
-                        
-                        if row['Phone'] != 'N/A':
-                            popup_html += f"<b>Phone:</b> {row['Phone']}<br>"
-                        
-                        if row['Opening_Hours'] != 'N/A':
-                            popup_html += f"<b>Hours:</b> {row['Opening_Hours']}<br>"
-                        
-                        popup_html += f"""
-                            <br>
-                            <a href="{row['Google_Maps']}" target="_blank" style="background-color:#4CAF50;color:white;padding:5px 10px;text-decoration:none;border-radius:4px;margin-right:5px;">View on Map</a>
-                            <a href="{row['Directions']}" target="_blank" style="background-color:#2196F3;color:white;padding:5px 10px;text-decoration:none;border-radius:4px;">Get Directions</a>
-                        </div>
-                        """
-                        
-                        folium.Marker(
-                            [row['Latitude'], row['Longitude']],
-                            popup=folium.Popup(popup_html, max_width=300),
-                            tooltip=row['Name'],
-                            icon=folium.Icon(
-                                color=color_map.get(row['Type'], 'gray'),
-                                icon='info-sign'
-                            )
-                        ).add_to(m)
-                    
-                    folium.Circle(
-                        user_location,
-                        radius=radius_km * 1000,
-                        color='red',
-                        fill=True,
-                        opacity=0.1
-                    ).add_to(m)
-                    
-                    folium_static(m, width=1200, height=500)
-                    
-                    st.divider()
                 
-                st.subheader("📋 Detailed Results")
+                # Search radius circle
+                folium.Circle(
+                    user_location,
+                    radius=radius_km * 1000,
+                    color='#667eea',
+                    fill=True,
+                    fillOpacity=0.1,
+                    popup=f"Search area: {radius_km} km radius"
+                ).add_to(m)
                 
-                display_df = df.copy()
-                if max_results != "All":
-                    display_df = display_df.head(max_results)
+                folium_static(m, width=1200, height=600)
                 
-                for idx, row in display_df.iterrows():
-                    with st.expander(f"**{idx + 1}. {row['Name']}** - {row['Type']} ({row['Distance_km']} km)", expanded=(idx < 3)):
-                        col1, col2, col3 = st.columns([2, 2, 1])
-                        
-                        with col1:
-                            st.write(f"**📍 Address:** {row['Address']}")
-                            if row['Phone'] != 'N/A':
-                                st.write(f"**📞 Phone:** {row['Phone']}")
-                            if row['Opening_Hours'] != 'N/A':
-                                st.write(f"**🕐 Hours:** {row['Opening_Hours']}")
-                        
-                        with col2:
-                            st.write(f"**📏 Distance:** {row['Distance_km']} km")
-                            if row['Operator'] != 'N/A':
-                                st.write(f"**🏢 Operator:** {row['Operator']}")
-                            if row['Beds'] != 'N/A':
-                                st.write(f"**🛏️ Beds:** {row['Beds']}")
-                        
-                        with col3:
-                            st.markdown(f"[🗺️ View Map]({row['Google_Maps']})", unsafe_allow_html=True)
-                            st.markdown(f"[🧭 Directions]({row['Directions']})", unsafe_allow_html=True)
-                            if row['Website'] != 'N/A':
-                                st.markdown(f"[🌐 Website]({row['Website']})", unsafe_allow_html=True)
+                st.markdown("---")
                 
-                if len(df) > max_results and max_results != "All":
-                    st.info(f"Showing {max_results} of {len(df)} results. Change 'Results per page' in sidebar to see more.")
+                # Export options
+                st.markdown("### 💾 Save Results")
                 
-                st.divider()
-                
-                st.subheader("💾 Export Data")
-                
-                col1, col2, col3 = st.columns(3)
+                col1, col2 = st.columns(2)
                 
                 with col1:
                     csv = df.to_csv(index=False)
                     st.download_button(
-                        label="📥 Download Full Data (CSV)",
+                        label="📥 Download Complete List (CSV)",
                         data=csv,
-                        file_name=f"healthcare_finder_{place_name.replace(' ', '_')}_{datetime.now().strftime('%Y%m%d_%H%M')}.csv",
+                        file_name=f"emergency_services_{datetime.now().strftime('%Y%m%d_%H%M')}.csv",
                         mime="text/csv",
                         use_container_width=True
                     )
                 
                 with col2:
-                    summary_df = df[['Name', 'Type', 'Distance_km', 'Phone', 'Google_Maps', 'Directions']].copy()
-                    summary_csv = summary_df.to_csv(index=False)
-                    st.download_button(
-                        label="📄 Download with Links (CSV)",
-                        data=summary_csv,
-                        file_name=f"summary_with_links_{place_name.replace(' ', '_')}_{datetime.now().strftime('%Y%m%d_%H%M')}.csv",
-                        mime="text/csv",
-                        use_container_width=True
-                    )
-                
-                with col3:
-                    share_text = f"Nearby Resources near {place_name}:\n\n"
-                    for idx, row in df.head(10).iterrows():
+                    share_text = f"🚑 Emergency Services near {place_name}\n\n"
+                    for idx, row in df.head(15).iterrows():
                         share_text += f"{idx+1}. {row['Name']} ({row['Type']})\n"
-                        share_text += f"   Distance: {row['Distance_km']} km\n"
-                        share_text += f"   Map: {row['Google_Maps']}\n\n"
+                        share_text += f"   📏 {row['Distance_km']} km | 📞 {row['Phone']}\n"
+                        share_text += f"   🗺️ {row['Google_Maps']}\n\n"
                     
                     st.download_button(
-                        label="📤 Share as Text",
+                        label="📤 Share List (Text)",
                         data=share_text,
-                        file_name=f"share_{place_name.replace(' ', '_')}.txt",
+                        file_name=f"emergency_contacts_{datetime.now().strftime('%Y%m%d')}.txt",
                         mime="text/plain",
                         use_container_width=True
                     )
-                
-                st.divider()
-                
-                available_types = set(df['Type'].unique())
-                missing_types = set(resource_filter) - available_types
-                
-                if missing_types:
-                    st.info(f"ℹ️ No results found for: {', '.join(missing_types)}")
 
-st.divider()
-st.caption("Data source: OpenStreetMap | Built with Streamlit | Geocoding: Nominatim")
-st.caption("⚠️ Note: Results depend on OSM data completeness. Some facilities may be missing.")
-st.caption("💡 Tip: Click on map markers or use the buttons to open locations in Google Maps")
+# Footer
+st.markdown("---")
+st.markdown("""
+<div style='text-align: center; color: #718096; padding: 20px;'>
+    <p><strong>🇮🇳 Tourist Emergency Services Finder for India</strong></p>
+    <p>Data from OpenStreetMap | Always verify information before visiting</p>
+    <p>💡 <strong>Travel Tip:</strong> Save emergency numbers (100, 101, 102) before traveling</p>
+    <p style='font-size: 0.9rem; margin-top: 10px;'>For immediate emergencies, always call the appropriate helpline number</p>
+</div>
+""", unsafe_allow_html=True)
