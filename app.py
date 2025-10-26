@@ -9,384 +9,347 @@ from streamlit_folium import folium_static
 import time
 
 st.set_page_config(
-    page_title="Emergency Services Finder - India",
+    page_title="Emergency Services - India",
     page_icon="🏥",
     layout="wide"
 )
 
-# Clean, interesting CSS - not childish, not boring
+# Compact, clean CSS - everything properly sized
 st.markdown("""
     <style>
-    @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap');
     
     * {
-        font-family: 'Poppins', sans-serif;
+        font-family: 'Inter', sans-serif;
     }
     
     .main {
-        padding: 1.5rem 2.5rem;
-        max-width: 1400px;
+        padding: 1rem 2rem;
+        max-width: 1200px;
         margin: 0 auto;
     }
     
     .stApp {
-        background-color: #f8fafc;
+        background-color: #ffffff;
     }
     
-    /* Header Section */
-    .header-section {
+    /* Compact Header */
+    .header {
         text-align: center;
-        padding: 2rem 0;
-        margin-bottom: 2rem;
+        padding: 1rem 0;
+        margin-bottom: 1.5rem;
     }
     
-    .main-title {
-        font-size: 2.5rem;
-        font-weight: 700;
-        color: #1e293b;
-        margin-bottom: 0.5rem;
+    .header h1 {
+        font-size: 1.8rem;
+        font-weight: 600;
+        color: #1f2937;
+        margin: 0 0 0.3rem 0;
     }
     
-    .subtitle {
-        font-size: 1.1rem;
-        color: #64748b;
+    .header p {
+        font-size: 0.9rem;
+        color: #6b7280;
+        margin: 0;
     }
     
-    /* Emergency Numbers */
-    .emergency-grid {
-        display: grid;
-        grid-template-columns: repeat(5, 1fr);
-        gap: 1rem;
-        margin: 2rem 0;
+    /* Compact Emergency Numbers */
+    .emergency-row {
+        display: flex;
+        gap: 0.5rem;
+        margin: 1rem 0;
+        justify-content: center;
     }
     
-    .emergency-card {
-        background: white;
-        padding: 1.5rem 1rem;
-        border-radius: 12px;
+    .emergency-item {
+        background: #f9fafb;
+        border: 1px solid #e5e7eb;
+        border-radius: 8px;
+        padding: 0.6rem 1rem;
         text-align: center;
-        border: 2px solid #e2e8f0;
-        transition: all 0.3s ease;
+        min-width: 100px;
     }
     
-    .emergency-card:hover {
-        transform: translateY(-5px);
-        box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+    .emergency-item:hover {
+        background: #f3f4f6;
         border-color: #3b82f6;
     }
     
-    .emergency-icon {
-        font-size: 2rem;
-        margin-bottom: 0.5rem;
+    .em-label {
+        font-size: 0.75rem;
+        color: #6b7280;
+        margin-bottom: 0.2rem;
     }
     
-    .emergency-number {
-        font-size: 2rem;
+    .em-number {
+        font-size: 1.3rem;
         font-weight: 700;
         color: #dc2626;
-        margin: 0.5rem 0;
     }
     
-    .emergency-label {
-        font-size: 0.9rem;
-        color: #64748b;
-        font-weight: 500;
+    /* Compact Search Box */
+    .search-container {
+        background: #f9fafb;
+        border: 1px solid #e5e7eb;
+        border-radius: 10px;
+        padding: 1.2rem;
+        margin: 1rem 0;
     }
     
-    /* Search Box */
-    .search-box {
-        background: white;
-        padding: 2rem;
-        border-radius: 16px;
-        box-shadow: 0 4px 20px rgba(0,0,0,0.08);
-        margin: 2rem 0;
-    }
-    
-    /* Stats Cards */
-    .stats-container {
-        display: grid;
-        grid-template-columns: repeat(3, 1fr);
-        gap: 1.5rem;
-        margin: 2rem 0;
-    }
-    
-    .stat-card {
-        background: white;
-        padding: 1.5rem;
-        border-radius: 12px;
-        border-left: 4px solid #3b82f6;
-        box-shadow: 0 2px 10px rgba(0,0,0,0.05);
-    }
-    
-    .stat-number {
-        font-size: 2.5rem;
-        font-weight: 700;
-        color: #1e293b;
-    }
-    
-    .stat-label {
-        font-size: 0.95rem;
-        color: #64748b;
-        margin-top: 0.5rem;
-    }
-    
-    /* Result Cards */
+    /* Compact Result Card */
     .result-card {
         background: white;
-        padding: 1.5rem;
-        border-radius: 12px;
-        margin: 1rem 0;
-        border: 1px solid #e2e8f0;
-        transition: all 0.3s ease;
-        position: relative;
+        border: 1px solid #e5e7eb;
+        border-radius: 8px;
+        padding: 1rem;
+        margin: 0.6rem 0;
+        transition: all 0.2s;
     }
     
     .result-card:hover {
-        transform: translateY(-3px);
-        box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
         border-color: #3b82f6;
     }
     
     .result-header {
         display: flex;
         justify-content: space-between;
-        align-items: flex-start;
-        margin-bottom: 1rem;
+        align-items: center;
+        margin-bottom: 0.6rem;
     }
     
-    .result-title {
-        font-size: 1.3rem;
+    .result-name {
+        font-size: 1rem;
         font-weight: 600;
-        color: #1e293b;
+        color: #1f2937;
         margin: 0;
-        flex: 1;
     }
     
-    .distance-badge {
-        background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+    .result-distance {
+        background: #3b82f6;
         color: white;
-        padding: 0.5rem 1rem;
-        border-radius: 20px;
+        padding: 0.2rem 0.6rem;
+        border-radius: 12px;
+        font-size: 0.75rem;
         font-weight: 600;
-        font-size: 0.9rem;
-        white-space: nowrap;
     }
     
     .result-info {
-        color: #475569;
-        font-size: 0.95rem;
-        line-height: 1.8;
-        margin: 0.4rem 0;
+        font-size: 0.85rem;
+        color: #4b5563;
+        margin: 0.3rem 0;
+        line-height: 1.4;
     }
     
     .result-info strong {
-        color: #1e293b;
-        font-weight: 600;
-        margin-right: 0.5rem;
+        color: #1f2937;
+        font-weight: 500;
     }
     
-    .result-actions {
-        margin-top: 1.2rem;
+    .result-buttons {
+        margin-top: 0.7rem;
         display: flex;
-        gap: 0.8rem;
+        gap: 0.5rem;
+    }
+    
+    .btn {
+        padding: 0.4rem 1rem;
+        border-radius: 6px;
+        text-decoration: none;
+        font-size: 0.85rem;
+        font-weight: 500;
+        display: inline-block;
+        transition: all 0.2s;
     }
     
     .btn-map {
-        background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+        background: #10b981;
         color: white;
-        padding: 0.7rem 1.5rem;
-        border-radius: 8px;
-        text-decoration: none;
-        display: inline-block;
-        font-weight: 500;
-        transition: all 0.3s ease;
-        font-size: 0.95rem;
     }
     
     .btn-map:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 6px 20px rgba(16, 185, 129, 0.4);
+        background: #059669;
     }
     
-    .btn-directions {
-        background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+    .btn-dir {
+        background: #3b82f6;
         color: white;
-        padding: 0.7rem 1.5rem;
-        border-radius: 8px;
-        text-decoration: none;
-        display: inline-block;
-        font-weight: 500;
-        transition: all 0.3s ease;
+    }
+    
+    .btn-dir:hover {
+        background: #2563eb;
+    }
+    
+    /* Section Headers - Compact */
+    .section-title {
+        font-size: 1.1rem;
+        font-weight: 600;
+        color: #1f2937;
+        margin: 1.5rem 0 0.8rem 0;
+        padding-bottom: 0.5rem;
+        border-bottom: 2px solid #e5e7eb;
+    }
+    
+    .type-header {
         font-size: 0.95rem;
-    }
-    
-    .btn-directions:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 6px 20px rgba(59, 130, 246, 0.4);
-    }
-    
-    /* Section Headers */
-    .section-header {
-        font-size: 1.5rem;
         font-weight: 600;
-        color: #1e293b;
-        margin: 2rem 0 1rem 0;
-        padding-bottom: 0.8rem;
-        border-bottom: 3px solid #e2e8f0;
-    }
-    
-    .section-header-small {
-        font-size: 1.2rem;
-        font-weight: 600;
-        color: #334155;
-        margin: 1.5rem 0 1rem 0;
-        display: flex;
-        align-items: center;
-        gap: 0.8rem;
+        color: #374151;
+        margin: 1rem 0 0.5rem 0;
     }
     
     .count-badge {
         background: #3b82f6;
         color: white;
-        padding: 0.3rem 0.8rem;
-        border-radius: 15px;
-        font-size: 0.85rem;
-        font-weight: 600;
+        padding: 0.15rem 0.5rem;
+        border-radius: 10px;
+        font-size: 0.75rem;
+        margin-left: 0.5rem;
     }
     
-    /* Show More Button */
-    .show-more-container {
+    /* Stats - Compact */
+    .stats {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 0.8rem;
+        margin: 1rem 0;
+    }
+    
+    .stat-box {
+        background: white;
+        border: 1px solid #e5e7eb;
+        border-radius: 8px;
+        padding: 0.8rem;
         text-align: center;
-        margin: 1.5rem 0;
     }
     
+    .stat-num {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: #1f2937;
+    }
+    
+    .stat-label {
+        font-size: 0.75rem;
+        color: #6b7280;
+        margin-top: 0.2rem;
+    }
+    
+    /* Buttons */
     .stButton>button {
-        background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+        background: #3b82f6;
         color: white;
         border: none;
-        border-radius: 10px;
-        padding: 0.8rem 2.5rem;
-        font-weight: 600;
-        font-size: 1.05rem;
-        transition: all 0.3s ease;
+        border-radius: 6px;
+        padding: 0.5rem 1.5rem;
+        font-weight: 500;
+        font-size: 0.9rem;
     }
     
     .stButton>button:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 8px 25px rgba(59, 130, 246, 0.4);
+        background: #2563eb;
     }
     
-    /* Map Container */
-    .map-container {
-        background: white;
-        padding: 1.5rem;
-        border-radius: 16px;
-        box-shadow: 0 4px 20px rgba(0,0,0,0.08);
-        margin: 2rem 0;
+    /* Reduce input sizes */
+    .stTextInput>div>div>input {
+        font-size: 0.9rem;
+        padding: 0.5rem;
     }
     
-    /* Footer */
+    .stSelectbox>div>div>div {
+        font-size: 0.9rem;
+    }
+    
+    .stMultiSelect>div>div>div {
+        font-size: 0.85rem;
+    }
+    
+    /* Footer - Compact */
     .footer {
         text-align: center;
-        color: #94a3b8;
-        padding: 2rem 0;
-        margin-top: 3rem;
-        border-top: 2px solid #e2e8f0;
-    }
-    
-    .footer-title {
-        font-weight: 600;
-        color: #64748b;
-        font-size: 1.1rem;
-        margin-bottom: 0.5rem;
+        font-size: 0.8rem;
+        color: #9ca3af;
+        padding: 1.5rem 0;
+        margin-top: 2rem;
+        border-top: 1px solid #e5e7eb;
     }
     
     /* Responsive */
     @media (max-width: 768px) {
-        .emergency-grid {
-            grid-template-columns: repeat(2, 1fr);
+        .emergency-row {
+            flex-wrap: wrap;
         }
-        .stats-container {
+        .stats {
             grid-template-columns: 1fr;
         }
     }
     </style>
 """, unsafe_allow_html=True)
 
-# Header
+# Header - Compact
 st.markdown("""
-    <div class="header-section">
-        <h1 class="main-title">🏥 Emergency Services Finder</h1>
-        <p class="subtitle">Quickly find hospitals, clinics, pharmacies, police stations and emergency services across India</p>
+    <div class="header">
+        <h1>🏥 Emergency Services Finder</h1>
+        <p>Find nearby hospitals, clinics, pharmacies, police and emergency services in India</p>
     </div>
 """, unsafe_allow_html=True)
 
-# Emergency Numbers
+# Emergency Numbers - Compact
 st.markdown("""
-    <div class="emergency-grid">
-        <div class="emergency-card">
-            <div class="emergency-icon">🚔</div>
-            <div class="emergency-number">100</div>
-            <div class="emergency-label">Police</div>
+    <div class="emergency-row">
+        <div class="emergency-item">
+            <div class="em-label">🚔 Police</div>
+            <div class="em-number">100</div>
         </div>
-        <div class="emergency-card">
-            <div class="emergency-icon">🚒</div>
-            <div class="emergency-number">101</div>
-            <div class="emergency-label">Fire Brigade</div>
+        <div class="emergency-item">
+            <div class="em-label">🚒 Fire</div>
+            <div class="em-number">101</div>
         </div>
-        <div class="emergency-card">
-            <div class="emergency-icon">🚑</div>
-            <div class="emergency-number">108</div>
-            <div class="emergency-label">Ambulance</div>
+        <div class="emergency-item">
+            <div class="em-label">🚑 Ambulance</div>
+            <div class="em-number">108</div>
         </div>
-        <div class="emergency-card">
-            <div class="emergency-icon">👮</div>
-            <div class="emergency-number">1091</div>
-            <div class="emergency-label">Women Helpline</div>
+        <div class="emergency-item">
+            <div class="em-label">👮 Women</div>
+            <div class="em-number">1091</div>
         </div>
-        <div class="emergency-card">
-            <div class="emergency-icon">⚠️</div>
-            <div class="emergency-number">1078</div>
-            <div class="emergency-label">Disaster Mgmt</div>
+        <div class="emergency-item">
+            <div class="em-label">⚠️ Disaster</div>
+            <div class="em-number">1078</div>
         </div>
     </div>
 """, unsafe_allow_html=True)
 
-# Caching Functions
+# Functions
 @st.cache_data(ttl=3600)
 def geocode_location(place_name):
     try:
-        geolocator = Nominatim(user_agent="emergency_services_finder_india_v2")
+        geolocator = Nominatim(user_agent="emergency_finder_india")
         return geolocator.geocode(place_name + ", India", timeout=10)
     except:
         return None
 
 @st.cache_data(ttl=1800)
 def fetch_resources(lat, lon, radius_km, selected_types):
-    all_resource_queries = {
-        "Hospital": '[amenity=hospital]',
-        "Clinic": '[amenity=clinic]',
-        "Pharmacy": '[amenity=pharmacy]',
-        "Doctors": '[amenity=doctors]',
-        "Police Station": '[amenity=police]',
-        "Fire Station": '[amenity=fire_station]',
-        "ATM": '[amenity=atm]',
-        "Embassy": '[amenity=embassy]',
+    queries = {
+        "Hospital": '[amenity=hospital]', "Clinic": '[amenity=clinic]',
+        "Pharmacy": '[amenity=pharmacy]', "Doctors": '[amenity=doctors]',
+        "Police Station": '[amenity=police]', "Fire Station": '[amenity=fire_station]',
+        "ATM": '[amenity=atm]', "Embassy": '[amenity=embassy]',
         "Tourist Office": '[tourism=information]'
     }
     
-    resource_queries = {k: v for k, v in all_resource_queries.items() if k in selected_types}
-    all_results = []
-    overpass_url = "https://overpass-api.de/api/interpreter"
+    queries = {k: v for k, v in queries.items() if k in selected_types}
+    results = []
+    url = "https://overpass-api.de/api/interpreter"
     
-    progress_bar = st.progress(0)
-    status_text = st.empty()
+    progress = st.progress(0)
+    status = st.empty()
     
-    for idx, (r_type, tag) in enumerate(resource_queries.items()):
-        status_text.text(f"🔍 Searching for {r_type}...")
+    for idx, (r_type, tag) in enumerate(queries.items()):
+        status.text(f"Searching {r_type}...")
         
         try:
-            query = f"""
+            q = f"""
             [out:json][timeout:30];
             (
               node(around:{radius_km*1000},{lat},{lon}){tag};
@@ -396,285 +359,208 @@ def fetch_resources(lat, lon, radius_km, selected_types):
             out center 200;
             """
             
-            res = requests.get(overpass_url, params={'data': query}, timeout=35)
+            res = requests.get(url, params={'data': q}, timeout=35)
             res.raise_for_status()
             data = res.json()
             
-            for element in data.get('elements', []):
-                tags = element.get('tags', {})
+            for elem in data.get('elements', []):
+                tags = elem.get('tags', {})
                 
-                # Smart name extraction
                 name = tags.get('name') or tags.get('name:en') or tags.get('brand') or tags.get('operator')
                 if not name:
-                    addr_city = tags.get('addr:city', '')
-                    addr_area = tags.get('addr:suburb', tags.get('addr:locality', ''))
-                    if addr_city or addr_area:
-                        name = f"{r_type} in {addr_area or addr_city}".strip()
+                    city = tags.get('addr:city', '')
+                    area = tags.get('addr:suburb', tags.get('addr:locality', ''))
+                    if city or area:
+                        name = f"{r_type} in {area or city}".strip()
                     else:
                         continue
                 
-                if 'lat' in element and 'lon' in element:
-                    rlat, rlon = element['lat'], element['lon']
-                elif 'center' in element:
-                    rlat, rlon = element['center']['lat'], element['center']['lon']
+                if 'lat' in elem and 'lon' in elem:
+                    rlat, rlon = elem['lat'], elem['lon']
+                elif 'center' in elem:
+                    rlat, rlon = elem['center']['lat'], elem['center']['lon']
                 else:
                     continue
                 
-                distance = round(geodesic((lat, lon), (rlat, rlon)).km, 2)
+                dist = round(geodesic((lat, lon), (rlat, rlon)).km, 2)
+                phone = tags.get('phone', tags.get('contact:phone', 'N/A'))
+                hours = tags.get('opening_hours', 'N/A')
                 
-                phone = tags.get('phone', tags.get('contact:phone', 'Not available'))
-                opening_hours = tags.get('opening_hours', 'Not available')
+                addr_parts = [tags.get(k, '') for k in ['addr:housenumber', 'addr:street', 'addr:suburb', 'addr:city', 'addr:state'] if tags.get(k)]
+                address = ', '.join(addr_parts) if addr_parts else tags.get('addr:full', 'N/A')
                 
-                addr_parts = []
-                for key in ['addr:housenumber', 'addr:street', 'addr:suburb', 'addr:city', 'addr:state']:
-                    if tags.get(key):
-                        addr_parts.append(tags[key])
-                address = ', '.join(addr_parts) if addr_parts else tags.get('addr:full', 'Address not available')
+                maps = f"https://www.google.com/maps/search/?api=1&query={rlat},{rlon}"
+                dirs = f"https://www.google.com/maps/dir/?api=1&origin={lat},{lon}&destination={rlat},{rlon}"
                 
-                google_maps_link = f"https://www.google.com/maps/search/?api=1&query={rlat},{rlon}"
-                directions_link = f"https://www.google.com/maps/dir/?api=1&origin={lat},{lon}&destination={rlat},{rlon}"
-                
-                all_results.append({
-                    'Name': name,
-                    'Type': r_type,
-                    'Distance_km': distance,
-                    'Address': address,
-                    'Phone': phone,
-                    'Hours': opening_hours,
-                    'Latitude': rlat,
-                    'Longitude': rlon,
-                    'Google_Maps': google_maps_link,
-                    'Directions': directions_link
+                results.append({
+                    'Name': name, 'Type': r_type, 'Distance_km': dist,
+                    'Address': address, 'Phone': phone, 'Hours': hours,
+                    'Latitude': rlat, 'Longitude': rlon,
+                    'Google_Maps': maps, 'Directions': dirs
                 })
             
             time.sleep(0.5)
         except:
             pass
         
-        progress_bar.progress((idx + 1) / len(resource_queries))
+        progress.progress((idx + 1) / len(queries))
     
-    progress_bar.empty()
-    status_text.empty()
-    return all_results
+    progress.empty()
+    status.empty()
+    return results
 
-# Search Section
-st.markdown('<div class="search-box">', unsafe_allow_html=True)
-st.markdown("### 🔍 Search for Services")
+# Search - Compact
+st.markdown('<div class="search-container">', unsafe_allow_html=True)
 
 col1, col2 = st.columns([4, 1])
 with col1:
-    place_name = st.text_input(
-        "Location",
-        placeholder="e.g., Connaught Place Delhi, Marine Drive Mumbai, MG Road Bangalore",
-        label_visibility="collapsed"
-    )
+    place_name = st.text_input("Location", placeholder="e.g., Connaught Place Delhi", label_visibility="collapsed")
 with col2:
-    radius_km = st.selectbox(
-        "Radius",
-        [2, 5, 10, 15, 20, 30],
-        index=2,
-        format_func=lambda x: f"{x} km",
-        label_visibility="collapsed"
-    )
+    radius_km = st.selectbox("Radius", [2, 5, 10, 15, 20, 30], index=2, format_func=lambda x: f"{x} km", label_visibility="collapsed")
 
-st.markdown("#### What are you looking for?")
 col1, col2, col3 = st.columns(3)
-
 with col1:
-    st.markdown("**🏥 Medical**")
-    medical = st.multiselect("Medical", ["Hospital", "Clinic", "Pharmacy", "Doctors"], 
-                             default=["Hospital", "Pharmacy"], label_visibility="collapsed")
-
+    medical = st.multiselect("🏥 Medical", ["Hospital", "Clinic", "Pharmacy", "Doctors"], default=["Hospital"], label_visibility="collapsed")
 with col2:
-    st.markdown("**🚨 Emergency**")
-    emergency = st.multiselect("Emergency", ["Police Station", "Fire Station"], 
-                               default=["Police Station"], label_visibility="collapsed")
-
+    emergency = st.multiselect("🚨 Emergency", ["Police Station", "Fire Station"], default=["Police Station"], label_visibility="collapsed")
 with col3:
-    st.markdown("**ℹ️ Other**")
-    other = st.multiselect("Other", ["ATM", "Embassy", "Tourist Office"], 
-                          default=[], label_visibility="collapsed")
+    other = st.multiselect("ℹ️ Other", ["ATM", "Embassy", "Tourist Office"], default=[], label_visibility="collapsed")
 
 resource_filter = medical + emergency + other
 
 col1, col2, col3 = st.columns([2, 1, 2])
 with col2:
-    search_button = st.button("🔍 Search Now", use_container_width=True)
+    search_btn = st.button("Search", use_container_width=True)
 
 st.markdown('</div>', unsafe_allow_html=True)
 
-# Session state for show more
+# Session state
 if 'show_all' not in st.session_state:
     st.session_state.show_all = {}
 
 # Results
-if search_button:
+if search_btn:
     if not place_name.strip():
-        st.error("⚠️ Please enter a location")
+        st.error("Enter a location")
     elif not resource_filter:
-        st.error("⚠️ Please select at least one service")
+        st.error("Select at least one service")
     else:
-        with st.spinner("📍 Finding location..."):
+        with st.spinner("Finding location..."):
             location = geocode_location(place_name)
         
         if not location:
-            st.error("❌ Location not found. Try: 'Area Name, City' (e.g., 'Connaught Place, Delhi')")
+            st.error("Location not found. Try: 'Area, City'")
         else:
-            user_location = (location.latitude, location.longitude)
-            st.success(f"✅ {location.address}")
+            user_loc = (location.latitude, location.longitude)
+            st.success(f"✓ {location.address}")
             
-            with st.spinner("🔄 Searching for services..."):
+            with st.spinner("Searching..."):
                 all_results = fetch_resources(location.latitude, location.longitude, radius_km, resource_filter)
             
             if not all_results:
-                st.warning("⚠️ No results found. Try increasing radius or selecting more services.")
+                st.warning("No results found. Try increasing radius.")
             else:
                 df = pd.DataFrame(all_results)
                 df = df.sort_values(by='Distance_km').reset_index(drop=True)
                 
-                # Stats
-                st.markdown("""
-                    <div class="stats-container">
-                        <div class="stat-card">
-                            <div class="stat-number">{}</div>
-                            <div class="stat-label">Total Results Found</div>
+                # Stats - Compact
+                st.markdown(f"""
+                    <div class="stats">
+                        <div class="stat-box">
+                            <div class="stat-num">{len(df)}</div>
+                            <div class="stat-label">Results</div>
                         </div>
-                        <div class="stat-card">
-                            <div class="stat-number">{}</div>
-                            <div class="stat-label">Service Types</div>
+                        <div class="stat-box">
+                            <div class="stat-num">{len(df['Type'].unique())}</div>
+                            <div class="stat-label">Types</div>
                         </div>
-                        <div class="stat-card">
-                            <div class="stat-number">{} km</div>
-                            <div class="stat-label">Nearest Location</div>
+                        <div class="stat-box">
+                            <div class="stat-num">{df.iloc[0]['Distance_km']} km</div>
+                            <div class="stat-label">Nearest</div>
                         </div>
                     </div>
-                """.format(len(df), len(df['Type'].unique()), df.iloc[0]['Distance_km']), unsafe_allow_html=True)
+                """, unsafe_allow_html=True)
                 
-                # Results
-                st.markdown('<h2 class="section-header">📋 Search Results</h2>', unsafe_allow_html=True)
+                # Results - Compact
+                st.markdown('<div class="section-title">Results</div>', unsafe_allow_html=True)
                 
-                for service_type in df['Type'].unique():
-                    type_df = df[df['Type'] == service_type]
+                for stype in df['Type'].unique():
+                    type_df = df[df['Type'] == stype]
                     total = len(type_df)
                     
-                    st.markdown(f"""
-                        <div class="section-header-small">
-                            {service_type}
-                            <span class="count-badge">{total} found</span>
-                        </div>
-                    """, unsafe_allow_html=True)
+                    st.markdown(f'<div class="type-header">{stype} <span class="count-badge">{total}</span></div>', unsafe_allow_html=True)
                     
-                    # Show 5 by default
-                    show_count = 5 if not st.session_state.show_all.get(service_type, False) else total
-                    display_df = type_df.head(show_count)
+                    show = 3 if not st.session_state.show_all.get(stype, False) else total
+                    display_df = type_df.head(show)
                     
                     for idx, row in display_df.iterrows():
                         st.markdown(f"""
                         <div class="result-card">
                             <div class="result-header">
-                                <h3 class="result-title">{row['Name']}</h3>
-                                <span class="distance-badge">📏 {row['Distance_km']} km</span>
+                                <div class="result-name">{row['Name']}</div>
+                                <div class="result-distance">{row['Distance_km']} km</div>
                             </div>
-                            <p class="result-info"><strong>📍 Address:</strong>{row['Address']}</p>
-                            <p class="result-info"><strong>📞 Phone:</strong>{row['Phone']}</p>
-                            <p class="result-info"><strong>🕒 Hours:</strong>{row['Hours']}</p>
-                            <div class="result-actions">
-                                <a href="{row['Google_Maps']}" target="_blank" class="btn-map">🗺️ View on Map</a>
-                                <a href="{row['Directions']}" target="_blank" class="btn-directions">🧭 Get Directions</a>
+                            <div class="result-info"><strong>📍</strong> {row['Address']}</div>
+                            <div class="result-info"><strong>📞</strong> {row['Phone']}</div>
+                            <div class="result-info"><strong>🕒</strong> {row['Hours']}</div>
+                            <div class="result-buttons">
+                                <a href="{row['Google_Maps']}" target="_blank" class="btn btn-map">View Map</a>
+                                <a href="{row['Directions']}" target="_blank" class="btn btn-dir">Directions</a>
                             </div>
                         </div>
                         """, unsafe_allow_html=True)
                     
-                    # Show more button
-                    if total > 5:
-                        col1, col2, col3 = st.columns([2, 1, 2])
-                        with col2:
-                            if not st.session_state.show_all.get(service_type, False):
-                                if st.button(f"Show All {total}", key=f"show_{service_type}", use_container_width=True):
-                                    st.session_state.show_all[service_type] = True
-                                    st.rerun()
-                            else:
-                                if st.button(f"Show Less", key=f"hide_{service_type}", use_container_width=True):
-                                    st.session_state.show_all[service_type] = False
-                                    st.rerun()
+                    if total > 3:
+                        if not st.session_state.show_all.get(stype, False):
+                            if st.button(f"Show all {total}", key=f"s_{stype}"):
+                                st.session_state.show_all[stype] = True
+                                st.rerun()
+                        else:
+                            if st.button(f"Show less", key=f"h_{stype}"):
+                                st.session_state.show_all[stype] = False
+                                st.rerun()
                 
-                # Map
-                st.markdown('<h2 class="section-header">🗺️ Map View</h2>', unsafe_allow_html=True)
-                st.markdown('<div class="map-container">', unsafe_allow_html=True)
+                # Map - Compact
+                st.markdown('<div class="section-title">Map</div>', unsafe_allow_html=True)
                 
-                m = folium.Map(location=user_location, zoom_start=13)
+                m = folium.Map(location=user_loc, zoom_start=13)
+                folium.Marker(user_loc, popup="Your Location", icon=folium.Icon(color='red', icon='star', prefix='fa')).add_to(m)
                 
-                folium.Marker(
-                    user_location,
-                    popup="<b>📍 Your Location</b>",
-                    tooltip="You are here",
-                    icon=folium.Icon(color='red', icon='star', prefix='fa')
-                ).add_to(m)
-                
-                colors = {
-                    'Hospital': 'blue', 'Clinic': 'lightblue', 'Doctors': 'purple',
-                    'Pharmacy': 'green', 'Police Station': 'darkblue', 'Fire Station': 'orange',
-                    'ATM': 'gray', 'Embassy': 'pink', 'Tourist Office': 'lightgreen'
-                }
+                colors = {'Hospital': 'blue', 'Clinic': 'lightblue', 'Doctors': 'purple',
+                         'Pharmacy': 'green', 'Police Station': 'darkblue', 'Fire Station': 'orange',
+                         'ATM': 'gray', 'Embassy': 'pink', 'Tourist Office': 'lightgreen'}
                 
                 for _, row in df.iterrows():
-                    popup = f"""
-                    <div style="width:260px; font-family: Poppins, sans-serif;">
-                        <h3 style="margin:0 0 10px 0;">{row['Name']}</h3>
-                        <p style="margin:4px 0;"><b>Type:</b> {row['Type']}</p>
-                        <p style="margin:4px 0;"><b>Distance:</b> {row['Distance_km']} km</p>
-                        <p style="margin:4px 0;"><b>Phone:</b> {row['Phone']}</p>
-                        <div style="margin-top:12px;">
+                    popup = f"""<div style="width:220px;font-family:Inter,sans-serif;">
+                        <h4 style="margin:0 0 8px 0;">{row['Name']}</h4>
+                        <p style="margin:3px 0;font-size:0.85rem;"><b>Type:</b> {row['Type']}</p>
+                        <p style="margin:3px 0;font-size:0.85rem;"><b>Distance:</b> {row['Distance_km']} km</p>
+                        <p style="margin:3px 0;font-size:0.85rem;"><b>Phone:</b> {row['Phone']}</p>
+                        <div style="margin-top:10px;">
                             <a href="{row['Google_Maps']}" target="_blank" 
-                               style="background:#10b981;color:white;padding:8px 14px;text-decoration:none;
-                                      border-radius:6px;margin-right:6px;display:inline-block;font-weight:500;">
-                                🗺️ View Map
-                            </a>
+                               style="background:#10b981;color:white;padding:6px 12px;text-decoration:none;
+                                      border-radius:5px;margin-right:5px;display:inline-block;font-size:0.8rem;">Map</a>
                             <a href="{row['Directions']}" target="_blank" 
-                               style="background:#3b82f6;color:white;padding:8px 14px;text-decoration:none;
-                                      border-radius:6px;display:inline-block;font-weight:500;">
-                                🧭 Directions
-                            </a>
+                               style="background:#3b82f6;color:white;padding:6px 12px;text-decoration:none;
+                                      border-radius:5px;display:inline-block;font-size:0.8rem;">Directions</a>
                         </div>
-                    </div>
-                    """
-                    folium.Marker(
-                        [row['Latitude'], row['Longitude']],
-                        popup=folium.Popup(popup, max_width=300),
-                        tooltip=f"{row['Name']} ({row['Distance_km']} km)",
-                        icon=folium.Icon(color=colors.get(row['Type'], 'gray'), icon='info-sign')
-                    ).add_to(m)
+                    </div>"""
+                    folium.Marker([row['Latitude'], row['Longitude']], popup=folium.Popup(popup, max_width=250),
+                                 tooltip=f"{row['Name']} ({row['Distance_km']} km)",
+                                 icon=folium.Icon(color=colors.get(row['Type'], 'gray'), icon='info-sign')).add_to(m)
                 
-                folium.Circle(user_location, radius=radius_km*1000, color='#3b82f6', 
-                             fill=True, fillOpacity=0.1).add_to(m)
+                folium.Circle(user_loc, radius=radius_km*1000, color='#3b82f6', fill=True, fillOpacity=0.1).add_to(m)
+                folium_static(m, width=1200, height=500)
                 
-                folium_static(m, width=1200, height=600)
-                st.markdown('</div>', unsafe_allow_html=True)
-                
-                # Download
-                st.markdown('<h2 class="section-header">💾 Download Results</h2>', unsafe_allow_html=True)
-                
+                # Download - Compact
+                st.markdown('<div class="section-title">Download</div>', unsafe_allow_html=True)
                 col1, col2, col3 = st.columns(3)
                 with col1:
                     csv = df.to_csv(index=False)
-                    st.download_button("📥 Download CSV", csv, 
-                                     f"services_{datetime.now().strftime('%Y%m%d_%H%M')}.csv",
-                                     "text/csv", use_container_width=True)
+                    st.download_button("CSV", csv, f"services_{datetime.now().strftime('%Y%m%d_%H%M')}.csv", "text/csv", use_container_width=True)
                 with col2:
-                    text = f"Emergency Services near {place_name}\n\n"
-                    for i, r in df.head(30).iterrows():
-                        text += f"{i+1}. {r['Name']} ({r['Type']})\n"
-                        text += f"   📏 {r['Distance_km']} km | 📞 {r['Phone']}\n"
-                        text += f"   🗺️ {r['Google_Maps']}\n\n"
-                    st.download_button("📤 Download Text", text,
-                                     f"services_{datetime.now().strftime('%Y%m%d')}.txt",
-                                     "text/plain", use_container_width=True)
+                    txt = f"Services near {place_name}\n\n" + "\n".join([f"{i+1}. {r['Name']} ({r['Type']}) - {r['Distance_km']} km\n   {r['Phone']}\n   {r['Google_Maps']}" for i, r in df.head(30).iterrows()])
+                    st.download_button("Text", txt, f"services_{datetime.now().strftime('%Y%m%d')}.txt", "text/plain", use_container_width=True)
 
-# Footer
-st.markdown("""
-    <div class="footer">
-        <p class="footer-title">Emergency Services Finder - India</p>
-        <p>Powered by OpenStreetMap | For life-threatening emergencies, dial helpline numbers above</p>
-        <p style="font-size:0.85rem; margin-top:0.5rem;">🇮🇳 Built for tourists and travelers in India</p>
-    </div>
-""", unsafe_allow_html=True)
+# Footer - Compact
+st.markdown('<div class="footer">Emergency Services Finder - India | Data: OpenStreetMap | For emergencies call helpline numbers</div>', unsafe_allow_html=True)
