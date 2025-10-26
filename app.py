@@ -10,7 +10,6 @@ import time
 
 st.set_page_config(
     page_title="Emergency Services India",
-    page_icon="🚨",
     layout="wide"
 )
 
@@ -324,7 +323,7 @@ st.markdown("""
 # Modern Header - NO "hospital" word
 st.markdown("""
     <div class="top-header">
-        <h1>🚨 Emergency Services Finder - India</h1>
+        <h1>  Emergency Services Finder - India</h1>
     </div>
 """, unsafe_allow_html=True)
 
@@ -451,7 +450,7 @@ def fetch_resources(lat, lon, radius_km, selected_types):
 
 # Modern Search Box
 st.markdown('<div class="search-box">', unsafe_allow_html=True)
-st.markdown('<div class="search-title">🔍 Search for Services</div>', unsafe_allow_html=True)
+st.markdown('<div class="search-title"> Search for Services</div>', unsafe_allow_html=True)
 
 col1, col2 = st.columns([5, 1])
 with col1:
